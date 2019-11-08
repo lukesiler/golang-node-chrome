@@ -1,2 +1,2 @@
 # golang-node-chrome
-golang plus yq, jq, ginkgo, nodejs, puppeteer and chrome
+golang plus git, yq, jq, ginkgo, nodejs, puppeteer and chrome
