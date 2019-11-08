@@ -1,0 +1,4 @@
+data:
+  image-name: lukesiler/golang-node-chrome
+  # 0.1.0 - first release with golang 1.12.9 plus yq, jq, ginkgo, nodejs 12.13, puppeteer and chrome
+  semver: 0.1.0
