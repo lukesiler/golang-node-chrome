@@ -102,3 +102,14 @@ RUN GO111MODULE=on go get github.com/mikefarah/yq@2.4.1
 
 # add ginkgo & gomega
 RUN go get -u github.com/onsi/ginkgo/ginkgo && go get -u github.com/onsi/gomega
+
+WORKDIR /opt/github/lukesiler/contapp
+
+# NOTE: create "Container App" group and user - include audio & video group membership as required for chrome.  Without this, chrome will complain about being run as root.
+RUN groupadd -r contappg \
+  && useradd -r -g contappg -G audio,video contappu \
+  && mkdir -p /home/contappu/Downloads \
+  && chown -R contappu:contappg /home/contappu \
+  && chown -R contappu:contappg /opt/github/lukesiler/contapp
+
+USER contappu
