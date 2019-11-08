@@ -9,4 +9,4 @@ docker run --rm ${IMAGE_NAME}:v${SEMVER} go version
 docker run --rm ${IMAGE_NAME}:v${SEMVER} ginkgo version
 docker run --rm ${IMAGE_NAME}:v${SEMVER} node -v
 docker run --rm ${IMAGE_NAME}:v${SEMVER} git version
-docker run --rm ${IMAGE_NAME}:v${SEMVER} google-chrome-stable --no-sandbox version
+docker run --rm ${IMAGE_NAME}:v${SEMVER} google-chrome-stable --version
