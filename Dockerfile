@@ -98,7 +98,7 @@ ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
 RUN mkdir -p "$GOPATH/src" "$GOPATH/bin" && chmod -R 777 "$GOPATH"
 
 # add yq using the go tools
-RUN GO111MODULE=on go get github.com/mikefarah/yq@2.4.1
+RUN go get -u github.com/mikefarah/yq
 
 # add ginkgo & gomega
 RUN go get -u github.com/onsi/ginkgo/ginkgo && go get -u github.com/onsi/gomega
@@ -110,6 +110,7 @@ RUN groupadd -r contappg \
   && useradd -r -g contappg -G audio,video contappu \
   && mkdir -p /home/contappu/Downloads \
   && chown -R contappu:contappg /home/contappu \
-  && chown -R contappu:contappg /opt/github/lukesiler/contapp
+  && chown -R contappu:contappg /opt/github/lukesiler/contapp \
+  && chown -R contappu:contappg /usr/local/lib/node_modules
 
 USER contappu
