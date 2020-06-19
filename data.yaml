@@ -3,4 +3,5 @@ data:
   # 0.1.0 - first release with golang 1.12.9 plus yq, jq, ginkgo, nodejs 12.13, puppeteer and chrome
   # 0.1.1 - add non-privileged user to address chrome's panic on being run as root
   # 0.1.2 - give ownership of /usr/local/lib/node_modules to contappu so pipeline can add global modules (e.g. jest)
-  semver: 0.1.2
+  # 0.1.3 - give ownership of /usr/local/bin to contappu for symlink'ing global node module
+  semver: 0.1.3
