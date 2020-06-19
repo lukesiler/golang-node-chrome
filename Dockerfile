@@ -110,6 +110,7 @@ RUN groupadd -r contappg \
   && useradd -r -g contappg -G audio,video contappu \
   && mkdir -p /home/contappu/Downloads \
   && chown -R contappu:contappg /home/contappu \
+  && chown -R contappu:contappg /usr/local/bin \
   && chown -R contappu:contappg /opt/github/lukesiler/contapp \
   && chown -R contappu:contappg /usr/local/lib/node_modules
 
