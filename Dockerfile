@@ -47,8 +47,9 @@ RUN apt-get update && apt-get install -y \
   && apt-get purge --auto-remove -y curl \
   && rm -rf /src/*.deb
 
-# below is copied from https://github.com/docker-library/golang/blob/2f6469ffe955721dd25e4cbb3013506659998aad/1.12/stretch/Dockerfile
+# below is copied from https://github.com/docker-library/golang/blob/ee2d52a7ad3e077af02313cd4cd87fd39837412c/1.14/stretch/Dockerfile
 # only change is to set WORKDIR to $GOPATH
+
 # gcc for cgo
 RUN apt-get update && apt-get install -y --no-install-recommends \
     g++ \
@@ -58,43 +59,109 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     pkg-config \
     && rm -rf /var/lib/apt/lists/*
 
-ENV GOLANG_VERSION 1.12.9
+ENV PATH /usr/local/go/bin:$PATH
+
+ENV GOLANG_VERSION 1.14.9
 
 RUN set -eux; \
     \
-    # this "case" statement is generated via "update.sh"
     dpkgArch="$(dpkg --print-architecture)"; \
     case "${dpkgArch##*-}" in \
-    amd64) goRelArch='linux-amd64'; goRelSha256='ac2a6efcc1f5ec8bdc0db0a988bb1d301d64b6d61b7e8d9e42f662fbb75a2b9b' ;; \
-    armhf) goRelArch='linux-armv6l'; goRelSha256='0d9be0efa9cd296d6f8ab47de45356ba45cb82102bc5df2614f7af52e3fb5842' ;; \
-    arm64) goRelArch='linux-arm64'; goRelSha256='3606dc6ce8b4a5faad81d7365714a86b3162df041a32f44568418c9efbd7f646' ;; \
-    i386) goRelArch='linux-386'; goRelSha256='c40824a3e6c948b8ecad8fe9095b620c488b3d8d6694bdd48084a4798db4799a' ;; \
-    ppc64el) goRelArch='linux-ppc64le'; goRelSha256='2e74c071c6a68446c9b00c1717ceeb59a826025b9202b3b0efed4f128e868b30' ;; \
-    s390x) goRelArch='linux-s390x'; goRelSha256='2aac6de8e83b253b8413781a2f9a0733384d859cff1b89a2ad0d13814541c336' ;; \
-    *) goRelArch='src'; goRelSha256='ab0e56ed9c4732a653ed22e232652709afbf573e710f56a07f7fdeca578d62fc'; \
-    echo >&2; echo >&2 "warning: current architecture ($dpkgArch) does not have a corresponding Go binary release; will be building from source"; echo >&2 ;; \
+		'amd64') \
+			arch='linux-amd64'; \
+			url='https://storage.googleapis.com/golang/go1.14.9.linux-amd64.tar.gz'; \
+			sha256='f0d26ff572c72c9823ae752d3c81819a81a60c753201f51f89637482531c110a'; \
+			;; \
+		'armhf') \
+			arch='linux-armv6l'; \
+			url='https://storage.googleapis.com/golang/go1.14.9.linux-armv6l.tar.gz'; \
+			sha256='e85dc09608dc9fc245ebc5daea0826898ac0eb0d48ed24e2300427850876c442'; \
+			;; \
+		'arm64') \
+			arch='linux-arm64'; \
+			url='https://storage.googleapis.com/golang/go1.14.9.linux-arm64.tar.gz'; \
+			sha256='65e6cef5c474a3514e754f6a7987c49388bb85a7b370370c1318087ac35427fa'; \
+			;; \
+		'i386') \
+			arch='linux-386'; \
+			url='https://storage.googleapis.com/golang/go1.14.9.linux-386.tar.gz'; \
+			sha256='14982ef997ec323023a11cffe1a4afc3aacd1b5edebf70a00e17b67f888d8cdb'; \
+			;; \
+		'ppc64el') \
+			arch='linux-ppc64le'; \
+			url='https://storage.googleapis.com/golang/go1.14.9.linux-ppc64le.tar.gz'; \
+			sha256='5880a37faf93b2396edc3ff231e0f8df14d0520505cc13d01116e24d7d1d0147'; \
+			;; \
+		's390x') \
+			arch='linux-s390x'; \
+			url='https://storage.googleapis.com/golang/go1.14.9.linux-s390x.tar.gz'; \
+			sha256='381fc24aff153c4affcb00f4547683212157af29b8f9e3de5952d78ac35f5a0f'; \
+			;; \
+		*) \
+# https://github.com/golang/go/issues/38536#issuecomment-616897960
+			arch='src'; \
+			url='https://storage.googleapis.com/golang/go1.14.9.src.tar.gz'; \
+			sha256='c687c848cc09bcabf2b5e534c3fc4259abebbfc9014dd05a1a2dc6106f404554'; \
+			echo >&2; \
+			echo >&2 "warning: current architecture ($dpkgArch) does not have a corresponding Go binary release; will be building from source"; \
+			echo >&2; \
+			;; \
     esac; \
     \
-    url="https://golang.org/dl/go${GOLANG_VERSION}.${goRelArch}.tar.gz"; \
-    wget -O go.tgz "$url"; \
-    echo "${goRelSha256} *go.tgz" | sha256sum -c -; \
+	wget -O go.tgz.asc "$url.asc" --progress=dot:giga; \
+	wget -O go.tgz "$url" --progress=dot:giga; \
+	echo "$sha256 *go.tgz" | sha256sum --strict --check -; \
+	\
+# https://github.com/golang/go/issues/14739#issuecomment-324767697
+	export GNUPGHOME="$(mktemp -d)"; \
+# https://www.google.com/linuxrepositories/
+	gpg --batch --keyserver ha.pool.sks-keyservers.net --recv-keys 'EB4C 1BFD 4F04 2F6D DDCC EC91 7721 F63B D38B 4796'; \
+	gpg --batch --verify go.tgz.asc go.tgz; \
+	gpgconf --kill all; \
+	rm -rf "$GNUPGHOME" go.tgz.asc; \
+	\
     tar -C /usr/local -xzf go.tgz; \
     rm go.tgz; \
     \
-    if [ "$goRelArch" = 'src' ]; then \
-    echo >&2; \
-    echo >&2 'error: UNIMPLEMENTED'; \
-    echo >&2 'TODO install golang-any from jessie-backports for GOROOT_BOOTSTRAP (and uninstall after build)'; \
-    echo >&2; \
-    exit 1; \
+	if [ "$arch" = 'src' ]; then \
+		savedAptMark="$(apt-mark showmanual)"; \
+		apt-get update; \
+		apt-get install -y --no-install-recommends golang-go; \
+		\
+		goEnv="$(go env | sed -rn -e '/^GO(OS|ARCH|ARM|386)=/s//export \0/p')"; \
+		eval "$goEnv"; \
+		[ -n "$GOOS" ]; \
+		[ -n "$GOARCH" ]; \
+		( \
+			cd /usr/local/go/src; \
+			./make.bash; \
+		); \
+		\
+		apt-mark auto '.*' > /dev/null; \
+		apt-mark manual $savedAptMark > /dev/null; \
+		apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \
+		rm -rf /var/lib/apt/lists/*; \
+		\
+# pre-compile the standard library, just like the official binary release tarballs do
+		go install std; \
+# go install: -race is only supported on linux/amd64, linux/ppc64le, linux/arm64, freebsd/amd64, netbsd/amd64, darwin/amd64 and windows/amd64
+#		go install -race std; \
+		\
+# remove a few intermediate / bootstrapping files the official binary release tarballs do not contain
+		rm -rf \
+			/usr/local/go/pkg/*/cmd \
+			/usr/local/go/pkg/bootstrap \
+			/usr/local/go/pkg/obj \
+			/usr/local/go/pkg/tool/*/api \
+			/usr/local/go/pkg/tool/*/go_bootstrap \
+			/usr/local/go/src/cmd/dist/dist \
+		; \
     fi; \
     \
-    export PATH="/usr/local/go/bin:$PATH"; \
     go version
 
 ENV GOPATH /go
-ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
-
+ENV PATH $GOPATH/bin:$PATH
 RUN mkdir -p "$GOPATH/src" "$GOPATH/bin" && chmod -R 777 "$GOPATH"
 
 # add yq using the go tools
